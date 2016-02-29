@@ -1,10 +1,10 @@
 var db = require('../db/db.js').database();
 
 /*Helper Functions*/
-var insertValues = function(eventOwner, title, date, time, streetAddress, city, state, zipCode, latitude, longitude, indoorOutdoor, estimatedWeather, weatherStatus, publicPrivate, callback){
+var insertValues = function(eventOwner, title, date, time, streetAddress, city, state, zipCode, latitude, longitude, indoorOutdoor, estimatedWeather, weatherStatus, publicPrivate, lastUpdate, callback){
 
-  var statement = db.prepare('INSERT INTO `eventTable`(`eventOwner`,`title`,`date`,`time`,`streetAddress`,`city`,`state`,`zipCode`,`latitude`,`longitude`,`indoorOutdoor`,`estimatedWeather`,`weatherStatus`,`publicPrivate`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
-  statement.run(eventOwner, title, date, time, streetAddress, city, state, zipCode, latitude, longitude, indoorOutdoor, estimatedWeather, weatherStatus, publicPrivate, callback);
+  var statement = db.prepare('INSERT INTO `eventTable`(`eventOwner`,`title`,`date`,`time`,`streetAddress`,`city`,`state`,`zipCode`,`latitude`,`longitude`,`indoorOutdoor`,`estimatedWeather`,`weatherStatus`,`publicPrivate`,`lastUpdate`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+  statement.run(eventOwner, title, date, time, streetAddress, city, state, zipCode, latitude, longitude, indoorOutdoor, estimatedWeather, weatherStatus, publicPrivate, lastUpdate, callback);
 };
 
 var createTable = function(callback){
@@ -23,7 +23,8 @@ var createTable = function(callback){
     '`indoorOutdoor` INTEGER,' +
     '`estimatedWeather` TEXT,' +
     '`weatherStatus` INTEGER,' +
-    '`publicPrivate` INTEGER)', callback);
+    '`publicPrivate` INTEGER,' +
+    '`lastUpdate` TEXT)', callback);
 };
 
 /*Exported Functions*/
@@ -47,6 +48,7 @@ module.exports.addOne = function(eventObj, callback){
     eventObj.estimatedWeather,
     eventObj.weatherStatus || 0,
     eventObj.publicPrivate || 1,
+    eventObj.lastUpdate,
     callback);
 };
 module.exports.getAll = function(callback){
