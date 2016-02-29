@@ -1,4 +1,5 @@
 var event = require('../model/event.js');
+var wxUp = require('../wundergroundapi/wundergroundapi.js');
 
 /*Helper Functions*/
 var getAllEvents =  function (req,res) {
@@ -34,6 +35,7 @@ module.exports.addOneEvent =function(req, res){
 /*Exported Functions*/
 module.exports.getter = function(req, res){
   console.log('inside getter');
+  wxUp.wxCheck();
   if (!req.query.eventOwner){
     getAllEvents(req, res);
   } else {

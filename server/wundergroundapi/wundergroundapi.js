@@ -1,5 +1,7 @@
 var event = require('../model/event.js');
 var eventController = require('../controllers/eventController.js');
+var https = require('https');
+var request = require('request');
 
 var wxTerm = {
 'Chance of Flurries':-1,
@@ -32,22 +34,20 @@ var wxTerm = {
 };
 
 // API request for 10 day forcast
-var wx = function(zip, callback){
-    var request = '/api/70ba34089d4744a1/forecast10day/q/' + zip + '.json';
-    return $http({
-      method: 'GET',
-      url: 'https://api.wunderground.com' + request
-    })
-    .then(function successCallback(res) {
-      callback(res.data);
-      }, function errorCallback(res) {
-        // called asynchronously if an error occurs
-        console.log('Your weather call had an error', res);
-      });
-  };
+
+var wx = function(zip, index, callback){
+  var reqPath = '/api/70ba34089d4744a1/forecast10day/q/94118.json';
+  request('https://api.wunderground.com'+reqPath, function(err, res, body){
+    if (!err && res.statusCode == 200) {
+      // console.log(body);
+      callback(JSON.parse(body)); 
+    }
+  });
+};
+
 // Function that updates each record in table to current weather information
 // Will update event owner of any changes
-var wxCheck = function(){
+module.exports.wxCheck = function(){
   var eventArr;
   Date.prototype.getDOY = function() {
     var onejan = new Date(this.getFullYear(),0,1);
@@ -62,40 +62,40 @@ var wxCheck = function(){
     if(err) {
       return res.status(500).json(err);
     }
+    console.log('getAll response: ', data);
     eventArr = data;
-  });
-  for(var i = 0; i < eventArr.length; i++){
-    var id = eventArr[i].eventID;
-    var date = eventArr[i].date;
-    var targetNum = date.getDOY();
-    var zip = eventArr[i].zipcode;
-    var daysOut = targetNum - todayNum;
-    if(daysOut < 9){
-      wx(zip, function(data){
-        // grab current forcasted weather for target day
-        var currForc = data.forecast.simpleforecast.forecastday[daysOut+1];
-        var estWx = currForc.conditions+' '+'With a High Temperature of '+currForc.high.fahrenheit+' F';
-        event.updateEvent(id, 'estimatedWeather', estWx);
-        if(wxTerm[currForc.conditions] !== eventArr[i].weatherStatus){
-          event.updateEvent(id, 'weatherStatus', wxTerm[currForc.conditions]);
-          // Email change in weather status to user
-        }
-      });
+    for(var i = 0; i < eventArr.length; i++){
+      var id = eventArr[i].eventID;
+      console.log('event Obj: ', eventArr[i]);
+      var date = new Date(eventArr[i].date);
+      var targetNum = date.getDOY();
+      console.log('target date num: ', targetNum);
+      var zip = eventArr[i].zipcode;
+      var daysOut = targetNum - todayNum;
+      console.log('Days Out:', daysOut);
+      if(daysOut < 9){
+        console.log('Current Event 1!!!: ', eventArr[i]);
+        console.log('Current Index: ', i);
+        wx(zip, i, function(data){
+          // grab current forcasted weather for target day
+          console.log('Index passed:' ,i);
+          var currEvent = eventArr[i];
+          console.log('Current Event Inside Wx Method: ', eventArr);
+          var timeStamp = today.toString();
+          // $filter('date')(today, 'medium');
+          var currForc = data.forecast.simpleforecast.forecastday[daysOut+1];
+          console.log('Current Weather Info: ', currForc);
+          var estWx = currForc.conditions+' '+'With a High Temperature of '+currForc.high.fahrenheit+' F';
+          console.log('Est weather string:', estWx);
+          event.updateEvent(id, 'estimatedWeather', estWx);
+          event.updateEvent(id, 'lastUpdate', timeStamp);
+          if(wxTerm[currForc.conditions] !== eventArr[i].weatherStatus){
+            event.updateEvent(id, 'weatherStatus', wxTerm[currForc.conditions]);
+            // Email change in weather status to user
+          }
+        });
+      }
     }
-  }
+  });
 };
 
-// Pull each event in event table
-// 
-//http://api.wunderground.com/api/70ba34089d4744a1/forecast10day/q/94602.json
-
-// module.exports = {
-// 	var weather = function (zipcode) {
-// 	  app.get('http://api.wunderground.com/api/70ba34089d4744a1/hourly10day/q/' + zipcode + '.json',
-// 	  	function(parsed_json) {
-// 		  var weatherObj = {};
-// 		  	weather.location = parsed_json['location']['city'];
-// 		    weather.temp_f = parsed_json['current_observation']['temp_f'];
-//   		}
-// 	  }
-// }
