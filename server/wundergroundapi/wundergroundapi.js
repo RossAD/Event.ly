@@ -1,7 +1,6 @@
-var express = require('express');
-var app = express();
-var sqlite = require('sqlite3');
-// var jquery = require(jquery); Commented to test server/db intergration
+var event = require('../model/event.js');
+var eventController = require('../controllers/eventController.js');
+
 var wxCond = {
   'Drizzle' : -1,
   'Rain' : -1,
@@ -58,7 +57,7 @@ var wxCond = {
   'Scattered Clouds':1
 };
 
-
+// API request for 10 day forcast
 var wx = function(zip, callback){
     var request = '/api/70ba34089d4744a1/forecast10day/q/' + zip + '.json';
     return $http({
@@ -72,7 +71,45 @@ var wx = function(zip, callback){
         console.log('Your weather call had an error', res);
       });
   };
-
+// Function that updates each record in table to current weather information
+// Will update event owner of any changes
+var wxCheck = function(){
+  var eventArr;
+  Date.prototype.getDOY = function() {
+    var onejan = new Date(this.getFullYear(),0,1);
+    return Math.ceil((this - onejan) / 86400000);
+  };
+  var wxSts = 0;
+  var today = new Date();
+  // var targetDay = $scope.addDate;
+  var todayNum = today.getDOY();
+  // var targetNum = targetDay.getDOY();
+  event.getAll(function (err, data) {
+    if(err) {
+      return res.status(500).json(err);
+    }
+    eventArr = data;
+  });
+  for(var i = 0; i < eventArr.length; i++){
+    var id = eventArr[i].eventID;
+    var date = eventArr[i].date;
+    var targetNum = date.getDOY();
+    var zip = eventArr[i].zipcode;
+    var daysOut = targetNum - todayNum;
+    if(daysOut < 9){
+      wx(zip, function(data){
+        // grab current forcasted weather for target day
+        var currForc = data.forecast.simpleforecast.forecastday[daysOut+1];
+        var estWx = currForc.conditions+' '+'With a High Temperature of '+currForc.high.fahrenheit+' F';
+        event.updateEvent(id, 'estimatedWeather', estWx);
+        if(wxCond[currForc.conditions] !== eventArr[i].weatherStatus){
+          event.updateEvent(id, 'weatherStatus', wxCond[currForc.conditions]);
+          // Email change in weather status to user
+        }
+      });
+    }
+  }
+};
 // Pull each event in event table
 // 
 //http://api.wunderground.com/api/70ba34089d4744a1/forecast10day/q/94602.json
