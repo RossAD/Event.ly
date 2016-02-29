@@ -1,6 +1,7 @@
 var event = require('../model/event.js');
 var eventController = require('../controllers/eventController.js');
 var https = require('https');
+var Promise = require("bluebird");
 var request = require('request');
 
 var wxTerm = {
