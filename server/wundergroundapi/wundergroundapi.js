@@ -74,6 +74,7 @@ var wx = function(zip, callback){
   };
 
 // Pull each event in event table
+// 
 //http://api.wunderground.com/api/70ba34089d4744a1/forecast10day/q/94602.json
 
 // module.exports = {

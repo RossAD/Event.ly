@@ -64,6 +64,11 @@ module.exports.deleteEvent = function(eventID, callback){
 
 };
 
+// Update records
+module.exports.updateEvent = function(eventID, col, data){
+  db.run('UPDATE eventTable SET '+col+'='+data+' where eventID = '+eventID);
+};
+
 //-------------------------------------------------------------------------------------------//
 
 /*Test for inserting in eventTable*/
